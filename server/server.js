@@ -1,4 +1,7 @@
 // Import required modules
+const multer = require('multer');
+const { v4: uuidv4 } = require('uuid');
+const upload = multer(); // For parsing multipart/form-data
 const express = require('express');
 const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
@@ -85,13 +88,123 @@ app.post('/verify', async (req, res) => {
     }
 });
 
+// Upload note route
+app.post('/upload-note', upload.single('file'), async (req, res) => {
+    const { title, description, subject, email } = req.body;
+    const file = req.file;
+
+    if (!file) return res.status(400).json({ success: false, message: 'No file uploaded' });
+
+    try {
+        const fileExt = file.originalname.split('.').pop();
+        const fileName = `${uuidv4()}.${fileExt}`;
+
+        // Upload file to Supabase Storage
+        const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('notes')
+            .upload(fileName, file.buffer, {
+                contentType: file.mimetype,
+                upsert: false
+            });
+
+        if (uploadError) {
+            console.error('Storage upload error:', uploadError);
+            throw uploadError;
+        }
+
+        const file_url = `${process.env.SUPABASE_URL}/storage/v1/object/public/notes/${fileName}`;
+        
+        console.log('Attempting to insert note with URL:', file_url);
+        
+        // Save metadata to Supabase table
+        const { data: insertData, error: insertError } = await supabase
+            .from('notes')
+            .insert([{ 
+                title, 
+                description, 
+                subject, 
+                file_url, 
+                uploaded_by: email 
+            }])
+            .select();
+
+        if (insertError) {
+            console.error('Database insert error:', insertError);
+            throw insertError;
+        }
+
+        res.json({ success: true, message: 'Note uploaded successfully', note: insertData[0] });
+    } catch (error) {
+        console.error('Upload error:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// Get notes route
+app.get('/notes', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('notes')
+            .select('*')
+            .order('timestamp', { ascending: false });
+
+        if (error) throw error;
+        res.json({ success: true, notes: data });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 // Fallback route to serve React frontend for any unmatched routes
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../client/build/index.html'));
 });
 
+app.get('/test-db-access', async (req, res) => {
+    try {
+      // Test insert
+      const { data, error } = await supabase
+        .from('notes')
+        .insert([{
+          title: 'Test Note',
+          description: 'Testing database access',
+          subject: 'Debug',
+          file_url: 'https://www.see.leeds.ac.uk/geo-maths/basic_maths.pdf',
+          uploaded_by: 'test@spelman.edu'
+        }])
+        .select();
+      
+      if (error) {
+        console.error('Test insert failed:', error);
+        return res.status(500).json({ success: false, error });
+      }
+      
+      res.json({ success: true, message: 'Database access working properly', data });
+    } catch (error) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  });
+
 // Start the server
 const PORT = process.env.PORT || 5000;
+(async () => {
+    const { error } = await supabase.from('notes').insert([
+      {
+        title: 'RLS TEST',
+        description: 'Checking if service key works',
+        subject: 'debug',
+        file_url: 'https://example.com/test.pdf',
+        uploaded_by: 'test@spelman.edu'
+      }
+    ]);
+  
+    if (error) {
+      console.log('🔴 Direct insert test failed:', error);
+    } else {
+      console.log('✅ Direct insert worked!');
+    }
+  })();
+  
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
