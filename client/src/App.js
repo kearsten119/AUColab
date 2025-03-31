@@ -197,51 +197,41 @@ function App() {
     // MAIN RENDER FUNCTION
     // ==========================================
     return (
-        <div className="App">
-            {/* MODIFIED: Conditional rendering now includes more logic */}
-            {!isVerified ? (
-                <>
-                    {/* CHANGED: Heading from "Enter Your Info" to "Welcome" */}
-                    <h1>Welcome</h1>
-                    
-                    {/* Conditional rendering: Show verification form or auth forms */}
-                    {isEmailSent ? (
-                        renderVerificationForm()
-                    ) : (
-                        <>
-                            {/* NEW: Tab navigation for switching between register and login */}
-                            <div className="auth-tabs">
-                                <button 
-                                    className={`tab-btn ${authMode === 'register' ? 'active' : ''}`}
-                                    onClick={() => setAuthMode('register')}
-                                >
-                                    Register
-                                </button>
-                                <button 
-                                    className={`tab-btn ${authMode === 'login' ? 'active' : ''}`}
-                                    onClick={() => setAuthMode('login')}
-                                >
-                                    Login
-                                </button>
-                            </div>
-                            
-                            {/* NEW: Conditionally render either registration or login form */}
-                            {authMode === 'register' ? renderRegistrationForm() : renderLoginForm()}
-                        </>
-                    )}
-                </>
+        <div className={isVerified ? "" : "App"}>
+        {!isVerified ? (
+          <>
+            <h1>Welcome</h1>
+            {isEmailSent ? (
+              renderVerificationForm()
             ) : (
-                /* Dashboard component remains the same */
-                <Dashboard 
-                    name={name} 
-                    email={email} 
-                    onLogout={handleLogout} 
-                />
+              <>
+                <div className="auth-tabs">
+                  <button 
+                    className={`tab-btn ${authMode === 'register' ? 'active' : ''}`}
+                    onClick={() => setAuthMode('register')}
+                  >
+                    Register
+                  </button>
+                  <button 
+                    className={`tab-btn ${authMode === 'login' ? 'active' : ''}`}
+                    onClick={() => setAuthMode('login')}
+                  >
+                    Login
+                  </button>
+                </div>
+                {authMode === 'register' ? renderRegistrationForm() : renderLoginForm()}
+              </>
             )}
-            
-            {/* Message display remains the same */}
-            {message && <p className="message">{message}</p>}
-        </div>
+          </>
+        ) : (
+          <Dashboard 
+            name={name} 
+            email={email} 
+            onLogout={handleLogout} 
+          />
+        )}
+      </div>
+      
     );
 }
 

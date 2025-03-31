@@ -187,23 +187,8 @@ app.get('/test-db-access', async (req, res) => {
 
 // Start the server
 const PORT = process.env.PORT || 5000;
-(async () => {
-    const { error } = await supabase.from('notes').insert([
-      {
-        title: 'RLS TEST',
-        description: 'Checking if service key works',
-        subject: 'debug',
-        file_url: 'https://example.com/test.pdf',
-        uploaded_by: 'test@spelman.edu'
-      }
-    ]);
-  
-    if (error) {
-      console.log('🔴 Direct insert test failed:', error);
-    } else {
-      console.log('✅ Direct insert worked!');
-    }
-  })();
+
+
   
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

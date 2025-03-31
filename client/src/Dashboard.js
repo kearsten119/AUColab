@@ -19,7 +19,9 @@ function Dashboard({ name, email, onLogout }) {
     }
   };
 
-  useEffect(() => { fetchNotes(); }, []);
+  useEffect(() => {
+    fetchNotes();
+  }, []);
 
   const handleUpload = async (e) => {
     e.preventDefault();
@@ -33,7 +35,10 @@ function Dashboard({ name, email, onLogout }) {
     try {
       const res = await axios.post('/upload-note', formData);
       setUploadMsg(res.data.message);
-      setTitle(''); setSubject(''); setDescription(''); setFile(null);
+      setTitle('');
+      setSubject('');
+      setDescription('');
+      setFile(null);
       fetchNotes();
     } catch (err) {
       setUploadMsg('Upload failed');
@@ -42,9 +47,16 @@ function Dashboard({ name, email, onLogout }) {
 
   return (
     <div className="dashboard">
-      <h2>Welcome to Study Swap</h2>
-      <p>Hello, {name}! You logged in with {email}.</p>
       <button className="logout-btn" onClick={onLogout}>Log Out</button>
+
+      <div className="header-logos">
+        <img src="/images/spelman-college.svg" alt="Spelman Logo" className="logo" />
+        <img src="/images/headerSmallLogo221221104236.jpeg" alt="Morehouse Logo" className="logo" />
+      </div>
+
+      <h2>Welcome to SpelHouse Study Swap</h2>
+      <p>Share and access class notes with fellow Spelman and Morehouse students.</p>
+      <p>Hello, {name}! You logged in with {email}.</p>
 
       <h3>Upload Notes</h3>
       <form onSubmit={handleUpload} encType="multipart/form-data" className="upload-form">
@@ -56,12 +68,23 @@ function Dashboard({ name, email, onLogout }) {
       </form>
       {uploadMsg && <p className="upload-msg">{uploadMsg}</p>}
 
+      <div className="card-section">
+        <div className="card">
+          <h4>Recently Added Notes</h4>
+          <p>{notes.length} this week</p>
+        </div>
+        <div className="card">
+          <h4>Top Courses</h4>
+          <button onClick={() => alert('Coming soon!')}>Browse by course</button>
+        </div>
+      </div>
+
       <h3>Browse Notes</h3>
       <ul className="notes-list">
         {notes.map((note) => (
           <li key={note.id} className="note-item">
-            <strong>{note.title}</strong> - {note.subject} <br />
-            <em>{note.description}</em> <br />
+            <strong>{note.title}</strong> - {note.subject}<br />
+            <em>{note.description}</em><br />
             <a href={note.file_url} target="_blank" rel="noopener noreferrer">View File</a>
           </li>
         ))}
