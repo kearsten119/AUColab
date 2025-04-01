@@ -1,4 +1,5 @@
 // Import required modules
+const Tesseract = require('tesseract.js');
 const multer = require('multer');
 const { v4: uuidv4 } = require('uuid');
 const upload = multer(); // For parsing multipart/form-data
@@ -89,65 +90,87 @@ app.post('/verify', async (req, res) => {
 });
 
 // Upload note route
+// Updated upload-note route with OCR
+// Upload note route with OCR (JPEG/PNG only)
 app.post('/upload-note', upload.single('file'), async (req, res) => {
-    const { title, description, subject, email } = req.body;
+    const { title, description, subject, email, semester, class_code, professor, department } = req.body;
     const file = req.file;
-
+  
     if (!file) return res.status(400).json({ success: false, message: 'No file uploaded' });
-
+  
     try {
-        const fileExt = file.originalname.split('.').pop();
-        const fileName = `${uuidv4()}.${fileExt}`;
-
-        // Upload file to Supabase Storage
-        const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('notes')
-            .upload(fileName, file.buffer, {
-                contentType: file.mimetype,
-                upsert: false
-            });
-
-        if (uploadError) {
-            console.error('Storage upload error:', uploadError);
-            throw uploadError;
+      const fileExt = file.originalname.split('.').pop();
+      const fileName = `${uuidv4()}.${fileExt}`;
+  
+      // Upload file to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('notes')
+        .upload(fileName, file.buffer, {
+          contentType: file.mimetype,
+          upsert: false
+        });
+  
+      if (uploadError) throw uploadError;
+  
+      const file_url = `${process.env.SUPABASE_URL}/storage/v1/object/public/notes/${fileName}`;
+  
+      // Run OCR ONLY for supported image types
+      let ocrText = '';
+      if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
+        try {
+          const ocrResult = await Tesseract.recognize(file.buffer, 'eng', {
+            logger: m => console.log(`OCR Progress: ${m.status} ${Math.round(m.progress * 100)}%`)
+          });
+          ocrText = ocrResult.data.text;
+        } catch (err) {
+          console.error('OCR failed:', err);
         }
-
-        const file_url = `${process.env.SUPABASE_URL}/storage/v1/object/public/notes/${fileName}`;
-        
-        console.log('Attempting to insert note with URL:', file_url);
-        
-        // Save metadata to Supabase table
-        const { data: insertData, error: insertError } = await supabase
-            .from('notes')
-            .insert([{ 
-                title, 
-                description, 
-                subject, 
-                file_url, 
-                uploaded_by: email 
-            }])
-            .select();
-
-        if (insertError) {
-            console.error('Database insert error:', insertError);
-            throw insertError;
-        }
-
-        res.json({ success: true, message: 'Note uploaded successfully', note: insertData[0] });
+      } else {
+        console.log(`Skipping OCR — unsupported file type: ${file.mimetype}`);
+      }
+  
+      // Save note metadata + OCR text to Supabase
+      const { data: insertData, error: insertError } = await supabase
+        .from('notes')
+        .insert([{ 
+          title,
+          description,
+          subject,
+          file_url,
+          uploaded_by: email,
+          semester,
+          class_code,
+          professor,
+          department,
+          ocr_text: ocrText
+        }])
+        .select();
+  
+      if (insertError) throw insertError;
+  
+      res.json({ success: true, message: 'Note uploaded successfully', note: insertData[0] });
     } catch (error) {
-        console.error('Upload error:', error);
-        res.status(500).json({ success: false, message: error.message });
+      console.error('Upload/OCR error:', error);
+      res.status(500).json({ success: false, message: error.message });
     }
-});
-
+  });
+  
 // Get notes route
+// GET /notes with filters
 app.get('/notes', async (req, res) => {
-    try {
-        const { data, error } = await supabase
-            .from('notes')
-            .select('*')
-            .order('timestamp', { ascending: false });
+    const { semester, department, professor, class_code } = req.query;
 
+    let query = supabase.from('notes').select('*');
+
+    if (semester) query = query.eq('semester', semester);
+    if (department) query = query.eq('department', department);
+    if (professor) query = query.ilike('professor', `%${professor}%`);
+    if (class_code) query = query.ilike('class_code', `%${class_code}%`);
+
+    query = query.order('timestamp', { ascending: false });
+
+    try {
+        const { data, error } = await query;
         if (error) throw error;
         res.json({ success: true, notes: data });
     } catch (error) {

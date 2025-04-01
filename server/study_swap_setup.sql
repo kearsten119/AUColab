@@ -67,3 +67,11 @@ on storage.objects
 for insert
 to authenticated, service_role
 with check (bucket_id = 'notes');
+-- Add new metadata columns
+alter table notes add column if not exists semester text;
+alter table notes add column if not exists class_code text;
+alter table notes add column if not exists professor text;
+alter table notes add column if not exists department text;
+
+-- Add OCR result column
+alter table notes add column if not exists ocr_text text;
