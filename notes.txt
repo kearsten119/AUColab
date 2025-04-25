@@ -5,3 +5,23 @@ to save changes on git open terminal and type in root
 2.git commit -m "describe changes made"
 3.git push
 
+
+
+deploy heroku 
+1. create new heroku app (if dont have already ) 
+or if u want to reuse an old one , instructions r on heroku page 
+2. go to heroku .com and login , find app then click on it 
+3.  click on deploy tab follow instructions for terminal commands 
+$ heroku login
+(if git remote -v doesnt show the heroku app,
+ we need to set the remote branch like this below)
+heroku git:remote -a spelhousestudyswap
+
+confirm that the remote branch list includes heroku by typing 
+git remote -v
+
+git add .
+git commit -am "add comment "
+git push heroku main
+
+
