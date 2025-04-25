@@ -1,0 +1,7 @@
+to save changes on git open terminal and type in root 
+0.git status (tells us if code on git hub diffrent from what we have locally)
+0. git remote -v  (tells us what git repo we r referencing)
+1. git add .    (this add all files ) 
+2.git commit -m "describe changes made"
+3.git push
+
