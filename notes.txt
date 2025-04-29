@@ -25,3 +25,5 @@ git commit -am "add comment "
 git push heroku main
 
 
+git init
+$ heroku git:remote -a finalmvp-winston
