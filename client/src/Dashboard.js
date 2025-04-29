@@ -139,14 +139,31 @@ function Dashboard({ name, email, onLogout }) {
       {uploadMsg && <p className="upload-msg">{uploadMsg}</p>}
 
       <div className="card-section">
-        <div className="card">
-          <h4>Recently Added Notes</h4>
-          <p>{notes.length} this week</p>
-        </div>
-        <div className="card">
-          <h4>Top Courses</h4>
-          <button onClick={() => alert('Coming soon!')}>Browse by course</button>
-        </div>
+      <div className="card">
+  <h4>Top Courses</h4>
+  <button
+    onClick={() => alert('Coming soon!')}
+    style={{
+      marginTop: '10px',
+      padding: '14px 24px',
+      fontSize: '18px',
+      borderRadius: '10px',
+      background: 'linear-gradient(to right, #800000, #a52a2a)',
+
+      color: 'white',
+      border: 'none',
+      cursor: 'pointer',
+      width: '100%', /* makes the button stretch nicely */
+      maxWidth: '300px', /* but not too wide */
+      display: 'block',
+      marginLeft: 'auto',
+      marginRight: 'auto'
+    }}
+  >
+    Browse by Course
+  </button>
+</div>
+
       </div>
       <div className="filter-section">
         <select value={semesterFilter} onChange={e => setSemesterFilter(e.target.value)}>
